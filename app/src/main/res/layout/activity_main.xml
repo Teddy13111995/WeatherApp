@@ -13,7 +13,7 @@
         android:id="@+id/PBLoading"
         android:visibility="gone"
         android:layout_centerInParent="true"/>
-    <ScrollView
+    <RelativeLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:visibility="visible"
@@ -111,26 +111,29 @@
         <TextView
             android:layout_width="395dp"
             android:layout_height="21dp"
-            android:layout_above="@id/weatherrecyclerview"
             android:layout_below="@id/conditionTextView"
             android:layout_marginStart="8dp"
             android:layout_marginTop="8dp"
             android:layout_marginEnd="8dp"
             android:text="Todays Weather Forecast"
             android:textColor="@color/white"
-            android:textStyle="bold" />
+            android:textStyle="bold"
+            android:id="@+id/tvtodayweather"/>
 
-        <com.jjoe64.graphview.GraphView
+        <com.github.mikephil.charting.charts.LineChart
             android:layout_width="match_parent"
             android:layout_height="200dp"
-            android:id="@+id/graphview"/>
+            android:id="@+id/linechart"
+            android:layout_below="@id/tvtodayweather"/>
+
         <androidx.recyclerview.widget.RecyclerView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:id="@+id/weatherrecyclerview"
             android:layout_alignParentBottom="true"
             android:orientation="horizontal"
+            android:layout_below="@id/linechart"
             app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"/>
 
-    </ScrollView>
+    </RelativeLayout>
 </RelativeLayout>

@@ -2,16 +2,10 @@ package com.srijan.weatherapp;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.app.ActivityCompat;
 import androidx.recyclerview.widget.RecyclerView;
 
-import android.Manifest;
-import android.content.Context;
 import android.content.pm.PackageManager;
-import android.location.Address;
-import android.location.Geocoder;
-import android.location.Location;
-import android.location.LocationManager;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
@@ -19,7 +13,6 @@ import android.view.WindowManager;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.RelativeLayout;
-import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -29,34 +22,24 @@ import com.android.volley.Response;
 import com.android.volley.VolleyError;
 import com.android.volley.toolbox.JsonObjectRequest;
 import com.android.volley.toolbox.Volley;
+import com.github.mikephil.charting.charts.LineChart;
+import com.github.mikephil.charting.components.YAxis;
+import com.github.mikephil.charting.data.Entry;
+import com.github.mikephil.charting.data.LineData;
+import com.github.mikephil.charting.data.LineDataSet;
+import com.github.mikephil.charting.interfaces.datasets.ILineDataSet;
 import com.google.android.material.textfield.TextInputEditText;
-import com.jjoe64.graphview.GraphView;
-import com.jjoe64.graphview.series.DataPoint;
-import com.jjoe64.graphview.series.LineGraphSeries;
 import com.squareup.picasso.Picasso;
 
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.io.IOException;
 import java.util.ArrayList;
-import java.util.List;
-import java.util.Locale;
 
 public class MainActivity extends AppCompatActivity {
-    //1. Add dependency in build.gradle(Module) for volley(implementation 'com.android.volley:volley:1.1.1')
-    // and picasso(implementation 'com.squareup.picasso:picasso:2.71828')
-    //2. Add color scheme for recyclerview
-    //3.Update main activity xml file
-    //4. Declare the variables used in the xml file.
-    //5. Initialize the variables.
-    //6. Create Weather Recycler view model
-    //7. Create weather recycler view adapter
-    //8. Initialise the weatherRvmodelarray list and weatherRV adapter.
-    //
 
-    private ScrollView RLHome;
+    private RelativeLayout RLHome;
     private ProgressBar loadingPB;
     private TextView cityNameTextView,temperatureTv,conditionTV;
     private TextInputEditText cityNameEditText;
@@ -66,12 +49,14 @@ public class MainActivity extends AppCompatActivity {
     private ArrayList<WeatherRVModel> weatherRVModelArrayList;
     private WeatherRVAdapter weatherRVAdapter;
 
-    private LocationManager locationManager;
-    private int PERMISSION_CODE=1;
+    private static final int PERMISSION_CODE=1;
 
     private String cityName;
 
-    private GraphView graph;
+    private LineChart lineChart;
+
+    private ArrayList<Entry> dataVal=new ArrayList<Entry>();
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -94,15 +79,12 @@ public class MainActivity extends AppCompatActivity {
         weatherRV=findViewById(R.id.weatherrecyclerview);
         weatherRVModelArrayList=new ArrayList<>();
         weatherRVAdapter=new WeatherRVAdapter(this,weatherRVModelArrayList);
-        graph=findViewById(R.id.graphview);
-        LineGraphSeries<DataPoint> series=new LineGraphSeries<DataPoint>();
-        locationManager=(LocationManager) getSystemService(Context.LOCATION_SERVICE);
-        if (ActivityCompat.checkSelfPermission(this,Manifest.permission.ACCESS_FINE_LOCATION)!= PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this,Manifest.permission.ACCESS_COARSE_LOCATION)!=PackageManager.PERMISSION_GRANTED){
-            ActivityCompat.requestPermissions(MainActivity.this,new String[]{Manifest.permission.ACCESS_FINE_LOCATION,Manifest.permission.ACCESS_COARSE_LOCATION},PERMISSION_CODE);
-        }
+
+        lineChart=findViewById(R.id.linechart);
 
 
-        getWeatherInfo(cityName);
+//
+//        getWeatherInfo(cityName);
 
         searchIcon.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -142,7 +124,7 @@ public class MainActivity extends AppCompatActivity {
                 loadingPB.setVisibility(View.GONE);
                 RLHome.setVisibility(View.VISIBLE);
                 weatherRVModelArrayList.clear();
-
+                dataVal.clear();
                 try {
                     String temperature=response.getJSONObject("current").getString("temp_c");
                     temperatureTv.setText(temperature);
@@ -169,6 +151,9 @@ public class MainActivity extends AppCompatActivity {
                         String temperatureC=hourObj.getString("temp_c");
                         String img=hourObj.getJSONObject("condition").getString("icon");
                         String wind=hourObj.getString("wind_kph");
+                        Float temp=Float.valueOf(temperatureC);
+
+//                        dataVal.add(new Entry(i,temp));
                         weatherRVModelArrayList.add(new WeatherRVModel(time,temperatureC,img,wind));
                         weatherRVAdapter.notifyDataSetChanged();
 
@@ -185,6 +170,40 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
+        for (int i=0;i<weatherRVModelArrayList.size();i++){
+            dataVal.add(new Entry(i,Float.parseFloat(weatherRVModelArrayList.get(i).getTemperature())));
+        }
         requestQueue.add(jsonObjectRequest);
+        lineGraphSet();
     }
+
+    private void lineGraphSet() {
+        if (dataVal.size()>0) {
+            LineDataSet lineDataSet = new LineDataSet(dataVal, "Today's Weather");
+            ArrayList<ILineDataSet> dataSets = new ArrayList<>();
+            dataSets.add(lineDataSet);
+            LineData lineData = new LineData(dataSets);
+
+            lineDataSet.setMode(LineDataSet.Mode.CUBIC_BEZIER);
+            lineDataSet.setDrawFilled(true);
+            lineDataSet.setFillColor(Color.GREEN);
+            lineDataSet.setColor(Color.GREEN);
+            lineChart.setVisibleYRangeMaximum(50f, YAxis.AxisDependency.LEFT);
+
+            lineChart.setBackgroundColor(Color.WHITE);
+
+            lineChart.setTouchEnabled(false);
+
+            lineChart.setData(lineData);
+            lineChart.notifyDataSetChanged();
+            for (int i=0;i<dataVal.size();i++){
+                Log.d("data value "+i, "lineGraphSet: "+dataVal.get(i));
+            }
+        }
+        else {
+            Log.d("data value", "lineGraphSet: empty data set");
+        }
+    }
+
+
 }
